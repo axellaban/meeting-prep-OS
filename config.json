@@ -1,6 +1,5 @@
 {
-  "$comment": "Configuración de Meeting Prep OS. Corré /setup en Claude Code y este archivo se completa solo — o editalo a mano. Los valores de abajo son plantilla: cambialos por los tuyos.",
-
+  "$comment": "Configuración de Meeting Prep OS. Corré `/setup` en Claude Code para completarlo guiado, o editá los valores directamente.",
   "owner": {
     "name": "Tu Nombre Completo",
     "shortName": "Tu Nombre",
@@ -9,14 +8,12 @@
     "timezone": "America/Argentina/Buenos_Aires",
     "utcOffset": "-03:00"
   },
-
   "branding": {
     "productName": "Meeting Prep OS",
-    "navbarBrand": "Meeting Prep",
+    "navbarBrand": "Meeting Prep OS",
     "tagline": "Llegá preparado a cada reunión importante.",
-    "footerNote": "Generado por IA"
+    "footerNote": "Generado automáticamente con IA"
   },
-
   "pipeline": {
     "language": "es",
     "detection": {
@@ -27,12 +24,11 @@
     "research": {
       "minSources": 8,
       "maxSources": 15,
-      "minContentChars": 25000
+      "minContentChars": 15000
     },
     "framework": "generic",
     "cronLocal": "06:03"
   },
-
   "publish": {
     "branch": "main",
     "siteUrl": ""

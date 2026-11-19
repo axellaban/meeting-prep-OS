@@ -39,12 +39,13 @@ Si preferís hacerlo a mano, editá `config.json` directamente — está comenta
 
 ## 3. Crear la Routine
 
-Esto **hay que hacerlo desde la interfaz**: los conectores solo se adjuntan ahí.
+Esto **hay que hacerlo desde la interfaz**: el repositorio y los conectores solo se adjuntan ahí.
 
 1. Andá a **claude.ai → Routines → nueva rutina**
-2. Elegí la hora (la misma que pusiste en `config.json`)
-3. Adjuntá los conectores: **Google Calendar** (obligatorio) y **Firecrawl** (recomendado)
-4. Pegá este prompt:
+2. **Elegí tu repositorio de GitHub como fuente/entorno de la rutina** (sin esto, la sesión despierta en una carpeta vacía y no encuentra `config.json` ni puede hacer `git push`)
+3. Elegí la hora (la misma que pusiste en `config.json`)
+4. Adjuntá los conectores: **Google Calendar** (obligatorio) y **Firecrawl** (recomendado)
+5. Pegá este prompt:
 
 ```
 Corré el pipeline diario de Meeting Prep OS.
@@ -67,11 +68,20 @@ Corré el pipeline diario de Meeting Prep OS.
 
 ## 4. Publicar el sitio (opcional)
 
-**vercel.com/new** → importá tu repo → **Deploy**, sin cambiar nada. Vercel vuelve
-a desplegar en cada push del agente.
+**vercel.com/new** → importá tu repo → **Deploy**. Vercel lo construye como Next.js
+(lo fija `vercel.json`) y vuelve a desplegar en cada push del agente.
 
-Si el repo es privado, el sitio también nace privado. Revisá la configuración de
-Vercel si querés compartirlo.
+El sitio pide **login con Google** (Auth.js). Antes del primer deploy:
+
+1. En **Google Cloud → APIs y servicios → Credenciales**, creá un cliente OAuth
+   (aplicación web) con estas URLs de redirección autorizadas:
+   `https://<tu-dominio>/api/auth/callback/google` y
+   `http://localhost:3000/api/auth/callback/google`.
+2. En **Vercel → Settings → Environment Variables**, cargá `AUTH_GOOGLE_ID`,
+   `AUTH_GOOGLE_SECRET` y `AUTH_SECRET` (este último con `npx auth secret`).
+   Los nombres están en `.env.example`.
+
+Hoy entra cualquier cuenta de Google que complete el login.
 
 ---
 
@@ -124,14 +134,37 @@ Sale con código 1 si encuentra algún error, así que sirve para un hook o para
 | El guion de conversación del briefing | `config.json` → `pipeline.framework`, y los archivos de `frameworks/` |
 | Cómo investiga y qué exige de densidad | `.claude/skills/meeting-prep-daily/SKILL.md` |
 | El diseño de todos los dashboards | `templates/dashboard.html` |
-| El portal | `index.html` |
+| El portal | `public/index.html` |
 
 Los frameworks incluidos son `generic` (default), `kona-4w` (discovery consultiva),
 `spin` y `meddic`. Para escribir uno propio, copiá `frameworks/generic.md`.
 
 ---
 
+## Actualizar tu repo con mejoras del template
+
+Cuando `meeting-prep-OS` saca una nueva versión (mejoras en `templates/dashboard.html`,
+`public/index.html`, skills o scripts), podés traer los cambios del motor **sin tocar tu
+`config.json` ni tus reuniones en `public/meetings/`**:
+
+```bash
+python3 tools/sync_template.py --pull-upstream
+```
+
+Y si querés aplicar las mejoras visuales o de interactividad del nuevo template a los
+dashboards que ya tenías generados:
+
+```bash
+python3 tools/generate_dashboard.py --upgrade-existing
+```
+
+---
+
 ## Problemas frecuentes
+
+**La Routine falló diciendo que el directorio estaba vacío o sin repositorio git.**
+Faltó seleccionar tu repositorio de GitHub como fuente/entorno dentro de la Routine
+en claude.ai. Editala y asociá el repo.
 
 **El agente dice que no encuentra Google Calendar.**
 El conector no quedó adjunto a la Routine. Editala en claude.ai y agregalo — no

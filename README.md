@@ -8,34 +8,33 @@ Vos ponés `#prep` en el título de un evento. A la mañana siguiente está list
 
 **→ [Cómo ponerlo a andar](SETUP.md)** · unos 15 minutos
 
-> **Empezá con el botón verde «Use this template»**, arriba a la derecha. Te crea tu
-> propio repo. Hacelo **privado**: los briefings van a contener research sobre personas
-> reales con nombre y apellido.
-
 ---
 
 ## Ponerlo a andar
 
 Necesitás plan pago de Claude — el que incluye **Routines**.
 
-1. **Apretá «Use this template»** arriba a la derecha y creá tu repo. **Marcalo
-   privado**: los briefings van a tener research sobre personas reales, con nombre
-   y apellido.
+1. **Creá tu repo desde el template** ([meeting-prep-OS](https://github.com/axellaban/meeting-prep-OS),
+   botón «Use this template»). **Marcalo privado**: los briefings van a tener research
+   sobre personas reales, con nombre y apellido.
 2. **Conectá Google Calendar** en claude.ai → Connectors.
 3. **Abrí tu repo en Claude Code** y escribí `/setup`. Te pregunta nombre, calendario,
    horario y método de venta, y deja todo configurado.
-4. **Creá la Routine** en claude.ai → Routines, **adjuntando el conector de Google
-   Calendar** y pegando el prompt que te da el `/setup`.
+4. **Creá la Routine** en claude.ai → Routines: **seleccioná tu repositorio de GitHub
+   como fuente**, **adjuntá el conector de Google Calendar** y pegá el prompt que te
+   da el `/setup`.
 5. **Conectá Firecrawl** en claude.ai → Connectors, y adjuntalo también a la rutina.
    Es el motor de research; si se cae, el sistema sigue solo con búsqueda web.
-6. **Importá el repo en [vercel.com/new](https://vercel.com/new)** → Deploy, sin tocar
-   nada. Sin esto los dashboards existen como archivos pero no podés abrirlos del
+6. **Importá el repo en [vercel.com/new](https://vercel.com/new)** y cargá las tres
+   variables del login con Google (`.env.example`; los pasos están en `SETUP.md`).
+   Sin esto los dashboards existen como archivos pero no podés abrirlos del
    celular, que es cuando los vas a querer.
 
-> **Dos cosas que se confunden seguido.** Conectar un conector en tu cuenta **no** lo
-> adjunta a la rutina: son dos pasos distintos, el 2 y el 4. Y el repo tiene que ser
-> **tuyo** — si clonás este directamente no vas a poder pushear, y el agente va a fallar
-> todas las mañanas al publicar.
+> **Tres cosas que se confunden seguido.** Conectar un conector en tu cuenta **no** lo
+> adjunta a la rutina: son dos pasos distintos, el 2 y el 4. La rutina tiene que tener
+> **tu repositorio seleccionado como entorno** (si no, despierta en una carpeta vacía).
+> Y el repo tiene que ser **tuyo** — si clonás el template directamente no vas a poder
+> pushear, y el agente va a fallar todas las mañanas al publicar.
 
 Detalle completo en **[SETUP.md](SETUP.md)**.
 
@@ -92,18 +91,22 @@ Por eso conviene que el repo sea **privado**.
 ```
 meeting-prep/
 ├── config.json                         # Tu configuración — empezá por acá
+├── VERSION                             # Versión actual del motor de Meeting Prep OS
 ├── SETUP.md                            # Guía de instalación
-├── index.html                          # Portal
-├── meetings.json                       # Registro de reuniones
 ├── frameworks/                         # Guiones de conversación enchufables
 │   ├── generic.md · kona-4w.md · spin.md · meddic.md
 ├── templates/dashboard.html            # Diseño de todos los dashboards
 ├── tools/
 │   ├── generate_dashboard.py           # Spec JSON → dashboard + registro
+│   ├── sync_template.py                # Sincroniza mejoras del motor con el template público
 │   └── verify.py                       # Chequea que el repo esté sano
-├── assets/marked.min.js                # Renderer de markdown (vendorizado)
-├── meetings/<id>/index.html            # Un dashboard por reunión (vacío al empezar)
-├── runs/last-run.md                    # Prueba de vida: cuándo corrió y qué hizo
+├── public/                             # Lo que se publica (detrás del login)
+│   ├── index.html                      # Portal
+│   ├── meetings.json                   # Registro de reuniones
+│   ├── meetings/<id>/index.html        # Un dashboard por reunión (vacío al empezar)
+│   └── assets/marked.min.js            # Renderer de markdown (vendorizado)
+├── auth.ts · proxy.ts · app/           # Login con Google (Auth.js) y protección del sitio
+├── runs/                               # Bitácora de corridas con incidencias
 └── .claude/skills/
     ├── setup/                          # /setup — configuración inicial
     └── meeting-prep-daily/             # El pipeline que corre cada día
@@ -122,12 +125,32 @@ meeting-prep/
 
 ---
 
+## Actualizar desde el template (o publicar nuevas versiones)
+
+El motor del sistema (`templates/`, `tools/`, `frameworks/`, `.claude/skills/`, `app/`,
+`auth.ts`, `proxy.ts`, `public/index.html`, `public/assets/`) está separado de tus datos
+(`config.json`, `public/meetings/`, `public/meetings.json`, `runs/`).
+
+- **Si clonaste el template** y querés traer las últimas mejoras de `meeting-prep-OS`
+  sin tocar tu configuración ni tus reuniones:
+  ```bash
+  python3 tools/sync_template.py --pull-upstream
+  ```
+- **Si sos el mantenedor** y querés exportar las mejoras del motor desde tu instancia
+  personal hacia el template público `meeting-prep-OS` (con verificación anti-fugas y
+  release en GitHub):
+  ```bash
+  python3 tools/sync_template.py --release v1.1.0
+  ```
+
+---
+
 ## Stack
 
 - **Calendario:** conector de Google Calendar de Claude — sin OAuth propio ni verificación
 - **Research:** Firecrawl con fallback automático a WebSearch + WebFetch
 - **Generación:** Python sin dependencias, sobre un template único
-- **Frontend:** HTML/CSS/JS puro, sin build step
+- **Frontend:** HTML/CSS/JS puro en `public/`, servido por Next.js con login de Google (Auth.js)
 - **Deploy:** Vercel, automático desde GitHub
 - **Automatización:** Routines de Claude — una sesión nueva cada mañana
 
@@ -143,15 +166,6 @@ meeting-prep/
 > skill del pipeline.
 
 ---
-
-## Estado
-
-Funciona y está en uso diario. Nació de un sistema personal, así que las decisiones
-de diseño están tomadas y documentadas — incluidas las de **no** usar ciertas
-herramientas, con el motivo escrito en el skill del pipeline.
-
-Si lo adaptás y algo te resulta confuso, abrí un issue: probablemente la documentación
-esté asumiendo contexto que sólo tenía el autor.
 
 ## Licencia
 
